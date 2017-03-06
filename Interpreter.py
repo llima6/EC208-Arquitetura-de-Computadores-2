@@ -9,10 +9,10 @@ current_instruction = -1
 instruction_type = -1
 run_bit = True
 
-def get_instruction_type(current_instruction):
+def get_instruction_type(current_instruction): #Acessar o arquivo de OPCodes.
     
 
-def find_data(current_instruction, instruction_type):
+def find_data(current_instruction, instruction_type): #Acessar o arquivo de variaveis.
     data = open("data.txt","r+")
     
     data.close()
