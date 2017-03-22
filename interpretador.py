@@ -23,7 +23,7 @@ def get_instr_type(instr): #Acessar o arquivo de OPCodes, passando os 4 caracter
     print("Tipo: %d"%instr_type)
     return instr_type
 
-def find_data(instr, instr_type): #Acessar o Acumulador ou a Memoria no endereco especificado no codigo, e entao armazenar o conteudo daquela posicao no vetor data.
+def find_data(instr, instr_type, AC): #Acessar o Acumulador ou a Memoria no endereco especificado no codigo, e entao armazenar o conteudo daquela posicao no vetor data.
     print("Find data")
     tipo_A = instr[8:10]
     pos_A = int(instr[4:8],2)
@@ -74,6 +74,7 @@ def find_data(instr, instr_type): #Acessar o Acumulador ou a Memoria no endereco
 
     data[2] = pos_A
     data[3] = pos_B
+    print(AC)
     print(data)
     return data
 
@@ -82,17 +83,13 @@ def execute(instr_type, data, AC): #Usar os dados recebidos para executar a oper
     if(instr_type == 0): #store
         file = open("memoria.txt","r")
         memoria = file.readline()
-        print("Memoria")
-        print(memoria)
         memoria = memoria.split(",")
-        print(memoria)
         file.close()
         #if(data[2] > len(memoria)-1):
         #    memoria.append(data[0])
         #else:
         #    memoria[data[2]] = data[0]
         memoria[data[2]] = data[1]
-        print(memoria)
         file = open("memoria.txt","w")
         file.write('')
         for x in memoria:
@@ -132,6 +129,8 @@ def execute(instr_type, data, AC): #Usar os dados recebidos para executar a oper
     elif(instr_type == 7): #literal
         REG[data[2]] = int(data[1])
     print(REG)
+    print(AC)
+    return AC
         
 
 #def interpret():
@@ -151,7 +150,7 @@ while run_bit:
         PC += 1
         instr_type = get_instr_type(instr)
         #data_loc = find_data(instr, instr_type)
-        data = find_data(instr, instr_type)
+        data = find_data(instr, instr_type, AC)
         #if data_loc >= 0:
         #    data = program[data_location]
         execute(instr_type, data, AC)
