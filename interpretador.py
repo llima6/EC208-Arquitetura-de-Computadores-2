@@ -23,7 +23,8 @@ def get_instr_type(instr): #Acessar o arquivo de OPCodes, passando os 4 caracter
     print("Tipo: %d"%instr_type)
     return instr_type
 
-def find_data(instr, instr_type, AC): #Acessar o Acumulador ou a Memoria no endereco especificado no codigo, e entao armazenar o conteudo daquela posicao no vetor data.
+def find_data(instr, instr_type): #Acessar o Acumulador ou a Memoria no endereco especificado no codigo, e entao armazenar o conteudo daquela posicao no vetor data.
+    global AC
     print("Find data")
     tipo_A = instr[8:10]
     pos_A = int(instr[4:8],2)
@@ -78,7 +79,8 @@ def find_data(instr, instr_type, AC): #Acessar o Acumulador ou a Memoria no ende
     print(data)
     return data
 
-def execute(instr_type, data, AC): #Usar os dados recebidos para executar a operacao escolhida na estrutura condicional
+def execute(instr_type, data): #Usar os dados recebidos para executar a operacao escolhida na estrutura condicional
+    global AC
     print("Execute")
     if(instr_type == 0): #store
         file = open("memoria.txt","r")
@@ -130,7 +132,6 @@ def execute(instr_type, data, AC): #Usar os dados recebidos para executar a oper
         REG[data[2]] = int(data[1])
     print(REG)
     print(AC)
-    return AC
         
 
 #def interpret():
@@ -150,10 +151,10 @@ while run_bit:
         PC += 1
         instr_type = get_instr_type(instr)
         #data_loc = find_data(instr, instr_type)
-        data = find_data(instr, instr_type, AC)
+        data = find_data(instr, instr_type)
         #if data_loc >= 0:
         #    data = program[data_location]
-        execute(instr_type, data, AC)
+        execute(instr_type, data)
         print("\n")
     else:
         run_bit = False
