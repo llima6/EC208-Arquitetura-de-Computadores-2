@@ -7,6 +7,7 @@ Created on Thu Mar 02 08:20:46 2017
 AC = 0
 REG = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 memoria = [-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1]
+cache = [-1,-1,-1]
 data = [0,0,0,0]
 PC = -1
 instr = -1
@@ -15,6 +16,45 @@ run_bit = True
 
 instructions = {'0000':0, '0001':1, '0010':2, '0011':3, '0100':4, '0101':5, '0110':6, '0111':7}
 
+#------------------------------------------------------------------------------------------
+
+def get_from_memory(): #Atualizar o vetor memoria com os valores presentes no txt memoria
+    file = open("memoria.txt","r")
+    memoria = file.readlines()
+    memoria = [x.strip() for x in memoria]
+    file.close()
+    return memoria
+
+#------------------------------------------------------------------------------------------
+
+def send_to_memory(memoria): #Atualizar o txt memoria com os valores do vetor memoria
+    file = open("memoria.txt","w")
+    file.write('')
+    for x in memoria:
+        file.write("%s\n"%str(x))
+    file.close()
+
+#------------------------------------------------------------------------------------------
+
+def cache_sync(cache, pos): #
+    memoria = get_from_memory()
+    cache[0] = pos
+    cache[1] = memoria[pos]
+    cache[2] = memoria[pos+1]
+    #for x in range(pos, pos+2):
+     #   
+      #  if(cache[x] != memoria[x]):
+       #     memoria[x] = cache[x]
+    #send_to_memory(memoria)
+
+#------------------------------------------------------------------------------------------
+
+def cache_check(pos):
+    if(cache[0] != pos & cache[0] != pos+1):
+        cache_sync(cache, pos)
+
+#------------------------------------------------------------------------------------------
+
 def get_instr_type(instr): #Acessar o arquivo de OPCodes, passando os 4 caracteres como parametro e retornando um int correspondente ao codigo da instrucao desejada.
     print("Get instruction type")
     instruction = instr[0:4]
@@ -22,6 +62,8 @@ def get_instr_type(instr): #Acessar o arquivo de OPCodes, passando os 4 caracter
     print(instr)
     print("Tipo: %d"%instr_type)
     return instr_type
+
+#------------------------------------------------------------------------------------------
 
 def find_data(instr, instr_type): #Acessar o Acumulador ou a Memoria no endereco especificado no codigo, e entao armazenar o conteudo daquela posicao no vetor data.
     global AC
@@ -36,30 +78,24 @@ def find_data(instr, instr_type): #Acessar o Acumulador ou a Memoria no endereco
         if(tipo_A == '00'):
             data[0] = REG[pos_A]
         elif(tipo_A == '01'):
-            file = open("memoria.txt","r")
-            memoria = file.readline()
-            memoria = memoria.split(",")
+            memoria = get_from_memory()
             #if(pos_A > len(memoria)-1):
             #    memoria.append('0')
             #else:
             #    data[0] = int(memoria[pos_A])
             data[0] = int(memoria[pos_A])
-            file.close()
         elif(tipo_A == '10'):
             data[0] = AC
     
         if(tipo_B == '00'):
             data[1] = REG[pos_B]
         elif(tipo_B == '01'):
-            file = open("memoria.txt","r")
-            memoria = file.readline()
-            memoria = memoria.split(",")
+            memoria = get_from_memory()
             #if(pos_B > len(memoria)-1):
             #    memoria.append('0')
             #else:
             #    data[1] = int(memoria[pos_B])
             data[1] = int(memoria[pos_B])
-            file.close()
         elif(tipo_B == '10'):
             data[1] = AC
         print("1")
@@ -79,43 +115,29 @@ def find_data(instr, instr_type): #Acessar o Acumulador ou a Memoria no endereco
     print(data)
     return data
 
+#------------------------------------------------------------------------------------------
+
 def execute(instr_type, data): #Usar os dados recebidos para executar a operacao escolhida na estrutura condicional
     global AC
     print("Execute")
     if(instr_type == 0): #store
-        file = open("memoria.txt","r")
-        memoria = file.readline()
-        memoria = memoria.split(",")
-        file.close()
+        memoria = get_from_memory()
         #if(data[2] > len(memoria)-1):
         #    memoria.append(data[0])
         #else:
         #    memoria[data[2]] = data[0]
         memoria[data[2]] = data[1]
-        file = open("memoria.txt","w")
-        file.write('')
-        for x in memoria:
-            file.writelines("%s,"%str(x))
-        file.close()
-
+        send_to_memory(memoria)
+        
     elif(instr_type == 1): #load
-        file = open("memoria.txt","r")
-        memoria = file.readline()
-        memoria = memoria.split(",")
+        memoria = get_from_memory()
         REG[data[2]] = int(memoria[data[3]])
-        file.close()
-
+        
     elif(instr_type == 2): #move
-        file = open("memoria.txt","r")
-        memoria = file.readline()
-        memoria = memoria.split(",")
+        memoria = get_from_memory()
         memoria[data[2]] = str(data[3])
-        file.close()
-        file = open("memoria.txt","w")
-        for x in memoria:
-            file.writelines("%s,"%str(x))
-        file.close()
-
+        send_to_memory(memoria)
+        
     elif(instr_type == 3): #add
         AC = data[0] + data[1]
 
@@ -129,23 +151,21 @@ def execute(instr_type, data): #Usar os dados recebidos para executar a operacao
         AC = data[0] / data[1]
 
     elif(instr_type == 7): #literal
+        REG[cache[0]] = int(cache[2])
         REG[data[2]] = int(data[1])
     print(REG)
     print(AC)
-        
 
-#def interpret():
+#------------------------------------------------------------------------------------------
+
 print('Starting')
 file = open("programa.txt","r")
 programa = file.readline()
 file.close()
 PC = 0
-file = open("memoria.txt","w")
-for x in memoria:
-    file.writelines("%s,"%str(x))
-file.close()
+send_to_memory(memoria)
 while run_bit:
-    instr = programa[PC*16:PC*16+16]    
+    instr = programa[PC*16:PC*16+16]  
     if(len(programa)/16 > PC):
         print("Instrução: %d"%(PC+1))
         PC += 1
@@ -158,7 +178,3 @@ while run_bit:
         print("\n")
     else:
         run_bit = False
-    
-        
-#def main():
-#    interpret()
