@@ -36,22 +36,17 @@ def send_to_memory(memoria): #Atualizar o txt memoria com os valores do vetor me
 
 #------------------------------------------------------------------------------------------
 
-def cache_sync(cache, pos): #
+def cache_pull(cache, pos): #Preenche a cache com dois valores da memoria, pos e pos+1
     memoria = get_from_memory()
     cache[0] = pos
-    cache[1] = memoria[pos]
-    cache[2] = memoria[pos+1]
-    #for x in range(pos, pos+2):
-     #   
-      #  if(cache[x] != memoria[x]):
-       #     memoria[x] = cache[x]
-    #send_to_memory(memoria)
+    cache[1] = int(memoria[pos])
+    cache[2] = int(memoria[pos+1])
 
 #------------------------------------------------------------------------------------------
 
-def cache_check(pos):
-    if(cache[0] != pos & cache[0] != pos+1):
-        cache_sync(cache, pos)
+def cache_push(pos_M, pos_C):
+    if(cache[pos_C] != memoria[pos_M]):
+        memoria[pos_M] = cache[pos_C]
 
 #------------------------------------------------------------------------------------------
 
@@ -67,6 +62,7 @@ def get_instr_type(instr): #Acessar o arquivo de OPCodes, passando os 4 caracter
 
 def find_data(instr, instr_type): #Acessar o Acumulador ou a Memoria no endereco especificado no codigo, e entao armazenar o conteudo daquela posicao no vetor data.
     global AC
+    global cache
     print("Find data")
     tipo_A = instr[8:10]
     pos_A = int(instr[4:8],2)
@@ -78,24 +74,26 @@ def find_data(instr, instr_type): #Acessar o Acumulador ou a Memoria no endereco
         if(tipo_A == '00'):
             data[0] = REG[pos_A]
         elif(tipo_A == '01'):
-            memoria = get_from_memory()
-            #if(pos_A > len(memoria)-1):
-            #    memoria.append('0')
-            #else:
-            #    data[0] = int(memoria[pos_A])
-            data[0] = int(memoria[pos_A])
+            if(cache[0] == pos_A):
+                data[0] = cache[1]
+            elif(cache[0] == (pos_A - 1)):
+                data[0] = cache[2]
+            else:
+                cache_pull(cache,pos_A)
+                data[0] = cache[1]
         elif(tipo_A == '10'):
             data[0] = AC
     
         if(tipo_B == '00'):
             data[1] = REG[pos_B]
         elif(tipo_B == '01'):
-            memoria = get_from_memory()
-            #if(pos_B > len(memoria)-1):
-            #    memoria.append('0')
-            #else:
-            #    data[1] = int(memoria[pos_B])
-            data[1] = int(memoria[pos_B])
+            if(cache[0] == pos_B):
+                data[0] = cache[1]
+            elif(cache[0] == (pos_B - 1)):
+                data[0] = cache[2]
+            else:
+                cache_pull(cache,pos_B)
+                data[0] = cache[1]
         elif(tipo_B == '10'):
             data[1] = AC
         print("1")
@@ -119,19 +117,20 @@ def find_data(instr, instr_type): #Acessar o Acumulador ou a Memoria no endereco
 
 def execute(instr_type, data): #Usar os dados recebidos para executar a operacao escolhida na estrutura condicional
     global AC
+    global memoria
     print("Execute")
     if(instr_type == 0): #store
-        memoria = get_from_memory()
-        #if(data[2] > len(memoria)-1):
-        #    memoria.append(data[0])
-        #else:
-        #    memoria[data[2]] = data[0]
-        memoria[data[2]] = data[1]
+        #memoria = get_from_memory()
+        cache[1] = data[1]
+        cache_push(data[2],1)
+        #memoria[data[2]] = data[1]
         send_to_memory(memoria)
         
     elif(instr_type == 1): #load
-        memoria = get_from_memory()
-        REG[data[2]] = int(memoria[data[3]])
+        #memoria = get_from_memory()
+        cache_pull(cache,data[3])
+        REG[data[2]] = cache[1]
+        #REG[data[2]] = int(memoria[data[3]])
         
     elif(instr_type == 2): #move
         memoria = get_from_memory()
@@ -170,10 +169,7 @@ while run_bit:
         print("Instrução: %d"%(PC+1))
         PC += 1
         instr_type = get_instr_type(instr)
-        #data_loc = find_data(instr, instr_type)
         data = find_data(instr, instr_type)
-        #if data_loc >= 0:
-        #    data = program[data_location]
         execute(instr_type, data)
         print("\n")
     else:
